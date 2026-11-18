@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Spotify → Bandcamp / Tidal",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "Opens Spotify track, album and artist links on Bandcamp or Tidal when the music is there.",
   "browser_specific_settings": {
     "gecko": {
@@ -19,8 +19,7 @@
     "webRequest",
     "webRequestBlocking",
     "tabs",
-    "storage",
-    "notifications"
+    "storage"
   ],
   "host_permissions": [
     "*://open.spotify.com/*",

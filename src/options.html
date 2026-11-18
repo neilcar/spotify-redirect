@@ -11,6 +11,8 @@
   .row { display: flex; gap: 8px; align-items: center; }
   .row input { flex: 1; }
   small { color: #666; }
+  #access { border: 2px solid #d70022; border-radius: 6px; padding: 8px 12px; margin: 0 0 12px; }
+  #access button { margin-top: 6px; display: block; }
   pre { background: #f4f4f4; padding: 8px; white-space: pre-wrap; word-break: break-all; min-height: 1em; }
   @media (prefers-color-scheme: dark) {
     body { background: #1c1b22; color: #eee; } pre { background: #2b2a33; } small { color: #aaa; }
@@ -18,6 +20,11 @@
 </style>
 </head>
 <body>
+  <div id="access" hidden>
+    <b>Site access is off.</b> The extension can't see Spotify links or look anything up until
+    it may access Spotify, Bandcamp and Tidal.
+    <button id="grant">Grant site access</button>
+  </div>
   <fieldset>
     <legend>Redirect</legend>
     <label><input type="checkbox" id="enabled"> Redirect Spotify links</label>
