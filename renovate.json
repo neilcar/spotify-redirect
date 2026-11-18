@@ -1,0 +1,75 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Dependency updates (replaces Dependabot). Weekly, after a 3-day release age; non-major npm updates, GitHub Actions updates (majors included) and the monthly lockfile refresh automerge once CI passes; npm majors open a PR for review.",
+  "extends": [
+    "config:recommended",
+    ":disableDependencyDashboard"
+  ],
+  "timezone": "America/New_York",
+  "schedule": [
+    "* 0-5 * * 1"
+  ],
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "* 0-5 1 * *"
+    ]
+  },
+  "packageRules": [
+    {
+      "description": "Non-major updates, digests and the monthly lockfile refresh automerge once CI passes (Renovate merges them itself).",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pinDigest",
+        "lockFileMaintenance"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
+    },
+    {
+      "description": "Digest pins and lockfile refreshes have no release date to age (the 3-day check would never clear), so they skip it.",
+      "matchUpdateTypes": [
+        "pin",
+        "pinDigest",
+        "lockFileMaintenance"
+      ],
+      "minimumReleaseAge": null,
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
+    },
+    {
+      "description": "GitHub Actions majors automerge once CI passes; a broken release step is rare and cheap to fix forward.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": false
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "matchManagers": [
+        "npm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "npm dependencies"
+    }
+  ]
+}
