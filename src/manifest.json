@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Spotify → Bandcamp / Tidal",
+  "version": "1.2.2",
+  "description": "Opens Spotify track, album and artist links on Bandcamp or Tidal when the music is there.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "spotify-redirect@neilcar.local",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "tabs",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "*://open.spotify.com/*",
+    "*://play.spotify.com/*",
+    "https://bandcamp.com/*",
+    "https://auth.tidal.com/*",
+    "https://openapi.tidal.com/*"
+  ],
+  "background": {
+    "scripts": [
+      "lib.js",
+      "background.js"
+    ]
+  },
+  "action": {
+    "default_title": "Spotify redirect: on",
+    "default_icon": "icon.svg"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "icons": {
+    "48": "icon.svg",
+    "96": "icon.svg"
+  }
+}

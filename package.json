@@ -1,0 +1,15 @@
+{
+  "name": "spotify-redirect",
+  "private": true,
+  "description": "Firefox extension: opens Spotify links on Bandcamp or Tidal when the music is there.",
+  "scripts": {
+    "test": "node test/unit.mjs",
+    "test:live": "node test/live.mjs",
+    "lint": "web-ext lint -s src",
+    "build": "web-ext build -s src -a dist --overwrite-dest",
+    "check-version": "node scripts/check-version.mjs"
+  },
+  "devDependencies": {
+    "web-ext": "10.8.0"
+  }
+}

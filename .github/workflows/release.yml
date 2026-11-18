@@ -1,0 +1,49 @@
+name: Release
+
+# Push a tag vX.Y.Z (matching src/manifest.json's version) to sign the extension as an
+# unlisted add-on on addons.mozilla.org and attach the signed .xpi to a GitHub Release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    runs-on: spr-amd64
+    timeout-minutes: 60
+    permissions:
+      contents: write # create the GitHub Release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Tag matches manifest version
+        run: npm run check-version
+      - name: Unit tests
+        run: npm test
+      - name: Lint
+        run: npm run lint
+      - name: Sign (unlisted)
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.AMO_JWT_ISSUER }}
+          WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+        # Waits up to 45 min for Mozilla's automated review, then downloads the signed .xpi.
+        run: npx web-ext sign -s src -a dist --channel unlisted --approval-timeout 2700000
+      - name: GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -l dist/
+          gh release create "$TAG" dist/*.xpi --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes

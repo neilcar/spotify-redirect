@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 12px; max-width: 560px; }
+  fieldset { border: 1px solid #ccc; border-radius: 6px; margin: 0 0 12px; padding: 8px 12px 12px; }
+  legend { font-weight: 600; }
+  label { display: block; margin: 6px 0 2px; }
+  input[type=text], input[type=password], select { width: 100%; box-sizing: border-box; padding: 4px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row input { flex: 1; }
+  small { color: #666; }
+  pre { background: #f4f4f4; padding: 8px; white-space: pre-wrap; word-break: break-all; min-height: 1em; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1c1b22; color: #eee; } pre { background: #2b2a33; } small { color: #aaa; }
+  }
+</style>
+</head>
+<body>
+  <fieldset>
+    <legend>Redirect</legend>
+    <label><input type="checkbox" id="enabled"> Redirect Spotify links</label>
+    <label for="order">Try first</label>
+    <select id="order">
+      <option value="bandcamp,tidal">Bandcamp, then Tidal</option>
+      <option value="tidal,bandcamp">Tidal, then Bandcamp</option>
+      <option value="bandcamp">Bandcamp only</option>
+      <option value="tidal">Tidal only</option>
+    </select>
+    <small>Add <code>?nr=1</code> to a Spotify link to open it on Spotify anyway, or click the toolbar button to turn redirects off.</small>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tidal API</legend>
+    <small>Tidal lookups need an app from <a href="https://developer.tidal.com/dashboard" target="_blank">developer.tidal.com</a> (free). Without it only Bandcamp is checked.</small>
+    <label for="tidalClientId">Client ID</label>
+    <input type="text" id="tidalClientId" autocomplete="off">
+    <label for="tidalClientSecret">Client secret</label>
+    <input type="password" id="tidalClientSecret" autocomplete="off">
+    <label for="tidalOpenIn">Open Tidal links in</label>
+    <select id="tidalOpenIn">
+      <option value="app">TIDAL desktop app</option>
+      <option value="web">Web player (tidal.com)</option>
+    </select>
+    <label for="countryCode">Country code</label>
+    <input type="text" id="countryCode" maxlength="2" style="width:4em">
+  </fieldset>
+
+  <fieldset>
+    <legend>Test a link</legend>
+    <div class="row">
+      <input type="text" id="testUrl" placeholder="https://open.spotify.com/track/…">
+      <button id="test">Test</button>
+    </div>
+    <pre id="out"></pre>
+    <button id="clear">Clear lookup cache</button>
+  </fieldset>
+<script src="options.js"></script>
+</body>
+</html>
