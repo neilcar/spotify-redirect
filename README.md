@@ -27,6 +27,11 @@ turn redirects off (the badge reads "off"). Lookups time out after 6 s, then ope
 Download the signed `.xpi` from the latest GitHub Release and drag it onto a Firefox window (or
 `about:addons` → gear → "Install Add-on From File…").
 
+From 1.2.3 on it updates itself: the manifest's `update_url` points at `updates.json` on the
+latest GitHub Release, and Firefox checks it about once a day (`about:addons` → gear → "Check
+for Updates" to check now). Versions before 1.2.3 have no `update_url`, so install 1.2.3 by
+hand once.
+
 For a quick try without signing: `about:debugging#/runtime/this-firefox` → "Load Temporary
 Add-on" → pick `src/manifest.json` (gone after a restart).
 
@@ -41,6 +46,7 @@ Add-on" → pick `src/manifest.json` (gone after a restart).
 
 CI (`.github/workflows/ci.yml`) runs the unit tests, lint and build on every push and pull
 request, on the self-hosted `spr-amd64` runners (lxdk8s `fleet/arc-runner-spotify-redirect-amd64`).
+Pull requests from forks run on GitHub-hosted runners instead, and need approval first.
 
 ## Release
 1. Bump `version` in `src/manifest.json` (AMO refuses a version it has already signed) and merge.
@@ -50,5 +56,6 @@ request, on the self-hosted `spr-amd64` runners (lxdk8s `fleet/arc-runner-spotif
 
 `.github/workflows/release.yml` checks the tag matches the manifest, signs the extension as an
 unlisted add-on on addons.mozilla.org (waits for Mozilla's automated review) and attaches the
-signed `.xpi` to a GitHub Release. It needs the repo secrets `AMO_JWT_ISSUER` and
+signed `.xpi` to a GitHub Release together with `updates.json` (written by
+`scripts/updates-json.mjs`), which is what installed copies poll to update themselves. It needs the repo secrets `AMO_JWT_ISSUER` and
 `AMO_JWT_SECRET` (API credentials from https://addons.mozilla.org/developers/addon/api/key/).

@@ -5,9 +5,10 @@
   "scripts": {
     "test": "node test/unit.mjs",
     "test:live": "node test/live.mjs",
-    "lint": "web-ext lint -s src",
+    "lint": "web-ext lint -s src --self-hosted",
     "build": "web-ext build -s src -a dist --overwrite-dest",
-    "check-version": "node scripts/check-version.mjs"
+    "check-version": "node scripts/check-version.mjs",
+    "updates-json": "node scripts/updates-json.mjs"
   },
   "devDependencies": {
     "web-ext": "10.8.0"
