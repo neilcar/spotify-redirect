@@ -41,8 +41,25 @@ const BYPASS_PARAM = "nr"; // ?nr=1 on a Spotify link always opens Spotify
 let cfg = { ...DEFAULTS };
 const memo = new Map(); // spotify key -> { target, service, at }
 
+// Settings live in storage.sync, so Firefox/Zen Sync (end-to-end encrypted) carries them to
+// the user's other browsers. The lookup cache stays in storage.local.
+const settings = browser.storage.sync;
+
+// Before 1.3.2 settings were in storage.local. Move them once; if this browser's sync storage
+// already has settings (another browser got there first), those win.
+async function migrateToSync() {
+  const keys = Object.keys(DEFAULTS);
+  const local = await browser.storage.local.get([...keys, "settingsInSync"]);
+  if (local.settingsInSync) return;
+  const old = Object.fromEntries(keys.filter((k) => k in local).map((k) => [k, local[k]]));
+  const synced = await settings.get(keys);
+  if (Object.keys(old).length && !Object.keys(synced).length) await settings.set(old);
+  await browser.storage.local.set({ settingsInSync: true });
+  await browser.storage.local.remove(keys);
+}
+
 async function loadConfig() {
-  cfg = { ...DEFAULTS, ...(await browser.storage.local.get(Object.keys(DEFAULTS))) };
+  cfg = { ...DEFAULTS, ...(await settings.get(Object.keys(DEFAULTS))) };
   canNative = await browser.permissions.contains(NATIVE_PERM);
   hasSiteAccess = await browser.permissions.contains(SITE_ACCESS);
   updateAction();
@@ -61,7 +78,7 @@ function updateAction() {
 }
 
 browser.storage.onChanged.addListener((changes, area) => {
-  if (area !== "local") return;
+  if (area !== "sync") return; // settings (local holds only the cache)
   if (Object.keys(changes).some((k) => LOOKUP_KEYS.includes(k))) {
     // Lookup settings changed (e.g. Tidal keys added): cached misses may now be hits.
     memo.clear();
@@ -75,7 +92,7 @@ browser.permissions.onRemoved.addListener(loadConfig);
 
 browser.action.onClicked.addListener(async () => {
   if (!hasSiteAccess) return browser.runtime.openOptionsPage(); // has the Grant button
-  await browser.storage.local.set({ enabled: !cfg.enabled });
+  await settings.set({ enabled: !cfg.enabled });
 });
 
 browser.runtime.onInstalled.addListener(async () => {
@@ -215,4 +232,4 @@ browser.runtime.onMessage.addListener((msg, sender) => {
   return undefined;
 });
 
-loadConfig();
+migrateToSync().catch((e) => console.warn("spotify-redirect: settings migration failed", e)).finally(loadConfig);
