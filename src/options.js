@@ -68,4 +68,16 @@ $("clear").addEventListener("click", async () => {
   $("out").textContent = "Cache cleared.";
 });
 
+const SITE_ACCESS = { origins: browser.runtime.getManifest().host_permissions };
+async function showAccess() {
+  $("access").hidden = await browser.permissions.contains(SITE_ACCESS);
+}
+$("grant").addEventListener("click", async () => {
+  await browser.permissions.request(SITE_ACCESS); // straight from the click, no await before
+  showAccess();
+});
+browser.permissions.onAdded.addListener(showAccess);
+browser.permissions.onRemoved.addListener(showAccess);
+
+showAccess();
 load();

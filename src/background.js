@@ -14,6 +14,10 @@ const LOOKUP_KEYS = ["order", "tidalClientId", "tidalClientSecret", "countryCode
 const NATIVE_HOST = "spotify_redirect_tidal";
 const NATIVE_PERM = { permissions: ["nativeMessaging"] };
 let canNative = false; // optional permission granted
+// In MV3 the user can withhold host permissions (an install from a file may not even offer
+// them). Without them nothing works: no Spotify interception, no lookups. Flag it loudly.
+const SITE_ACCESS = { origins: browser.runtime.getManifest().host_permissions };
+let hasSiteAccess = true;
 
 // handoff.html is web-accessible (a webRequest redirect can only land on such a page), so any
 // site could open it. Each redirect carries a one-time token naming what to play; the page
@@ -40,10 +44,17 @@ const memo = new Map(); // spotify key -> { target, service, at }
 async function loadConfig() {
   cfg = { ...DEFAULTS, ...(await browser.storage.local.get(Object.keys(DEFAULTS))) };
   canNative = await browser.permissions.contains(NATIVE_PERM);
+  hasSiteAccess = await browser.permissions.contains(SITE_ACCESS);
   updateAction();
 }
 
 function updateAction() {
+  if (!hasSiteAccess) {
+    browser.action.setTitle({ title: "Spotify redirect needs site access: click to grant it" });
+    browser.action.setBadgeText({ text: "!" });
+    browser.action.setBadgeBackgroundColor({ color: "#d70022" });
+    return;
+  }
   browser.action.setTitle({ title: `Spotify redirect: ${cfg.enabled ? "on" : "off"}` });
   browser.action.setBadgeText({ text: cfg.enabled ? "" : "off" });
   browser.action.setBadgeBackgroundColor({ color: "#777" });
@@ -63,7 +74,12 @@ browser.permissions.onAdded.addListener(loadConfig);
 browser.permissions.onRemoved.addListener(loadConfig);
 
 browser.action.onClicked.addListener(async () => {
+  if (!hasSiteAccess) return browser.runtime.openOptionsPage(); // has the Grant button
   await browser.storage.local.set({ enabled: !cfg.enabled });
+});
+
+browser.runtime.onInstalled.addListener(async () => {
+  if (!(await browser.permissions.contains(SITE_ACCESS))) browser.runtime.openOptionsPage();
 });
 
 function cacheKey(ref) {
