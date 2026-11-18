@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opening in TIDAL</title>
+<style>
+  :root { --bg: #fafafa; --fg: #222; --muted: #666; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1c1b22; --fg: #eee; --muted: #aaa; } }
+  body { background: var(--bg); color: var(--fg); font: 15px system-ui, sans-serif;
+         display: grid; place-items: center; min-height: 90vh; margin: 0 16px; }
+  main { text-align: center; max-width: 480px; }
+  p { margin: 6px 0; }
+  #detail { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+  <main>
+    <p id="status">Opening in TIDAL…</p>
+    <p id="detail"></p>
+  </main>
+<script src="handoff.js"></script>
+</body>
+</html>

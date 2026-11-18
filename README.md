@@ -35,6 +35,31 @@ hand once.
 For a quick try without signing: `about:debugging#/runtime/this-firefox` → "Load Temporary
 Add-on" → pick `src/manifest.json` (gone after a restart).
 
+## Autoplay in TIDAL (optional)
+Neither the TIDAL app nor tidal.com has a link that starts playback, so autoplay uses a small
+helper on the Mac (`native/tidal-play.mjs`) that Firefox runs through native messaging. It
+opens the link in TIDAL, then presses play in the app's own page through Chrome DevTools
+Protocol on `127.0.0.1:47320`. That needs TIDAL started with `--remote-debugging-port=47320`.
+
+    bash native/install.sh             # install or update (needs Node 22+)
+    bash native/install.sh uninstall   # remove it
+
+The installer adds the helper under `~/Library/Application Support/spotify-redirect/`, its
+native messaging manifest for Firefox and Zen, and `~/Applications/TIDAL (autoplay).app`, a
+launcher that starts TIDAL with the debug port. Use that launcher instead of TIDAL itself (put
+it in the Dock). Then tick **Autoplay in TIDAL** on the options page; it asks for the native
+messaging permission and checks the helper.
+
+- TIDAL not running: the helper starts it with the port, then plays.
+- TIDAL running without the port (started the normal way): the helper only opens the link;
+  it never quits your TIDAL.
+- Helper not installed: links open in TIDAL as before, without autoplay.
+
+While TIDAL runs with the port, any program on this Mac can control it (and read its session)
+through that port; it is bound to 127.0.0.1 only. Tracks play by double-clicking their row,
+albums and artists through the page's Play button, so a TIDAL redesign can break autoplay;
+links still open when it does.
+
 ## Develop
     npm ci
     npm test                              # offline unit checks

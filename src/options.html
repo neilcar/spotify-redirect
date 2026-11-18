@@ -43,6 +43,11 @@
       <option value="app">TIDAL desktop app</option>
       <option value="web">Web player (tidal.com)</option>
     </select>
+    <label><input type="checkbox" id="tidalAutoplay"> Autoplay in TIDAL</label>
+    <small>Starts the track playing in the desktop app. Needs the helper: run
+      <code>bash native/install.sh</code> from the extension's repo, then start TIDAL with the
+      <b>TIDAL (autoplay)</b> launcher it adds to ~/Applications.</small>
+    <pre id="helperStatus"></pre>
     <label for="countryCode">Country code</label>
     <input type="text" id="countryCode" maxlength="2" style="width:4em">
   </fieldset>

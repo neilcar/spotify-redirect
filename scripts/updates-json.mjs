@@ -1,6 +1,7 @@
 // Writes dist/updates.json, the self-hosted update manifest Firefox polls at the manifest's
 // update_url (the latest GitHub Release). It names this version and its signed .xpi.
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 export const REPO = "neilcar/spotify-redirect";
 
@@ -26,7 +27,8 @@ export function updatesJson(manifest) {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Compare paths, not URLs: the installed helper lives under "Application Support" (a space).
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const manifest = JSON.parse(readFileSync(new URL("../src/manifest.json", import.meta.url)));
   mkdirSync(new URL("../dist/", import.meta.url), { recursive: true });
   writeFileSync(new URL("../dist/updates.json", import.meta.url), JSON.stringify(updatesJson(manifest), null, 2) + "\n");

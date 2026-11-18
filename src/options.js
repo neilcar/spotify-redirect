@@ -9,7 +9,36 @@ async function load() {
   const sel = await browser.storage.local.get(Object.keys(SELECTS));
   for (const [k, d] of Object.entries(SELECTS)) $(k).value = sel[k] || d;
   for (const f of FIELDS) $(f).value = s[f] || (f === "countryCode" ? "US" : "");
+  const a = await browser.storage.local.get("tidalAutoplay");
+  $("tidalAutoplay").checked = !!a.tidalAutoplay && (await browser.permissions.contains(NATIVE_PERM));
+  if ($("tidalAutoplay").checked) checkHelper();
 }
+
+const NATIVE_PERM = { permissions: ["nativeMessaging"] };
+
+async function checkHelper() {
+  $("helperStatus").textContent = "Checking the helper…";
+  const r = await browser.runtime.sendMessage({ cmd: "pingHelper" });
+  if (!r?.pong) {
+    $("helperStatus").textContent = `Helper not found: ${r?.reason || "no reply"}. Links open in TIDAL without autoplay.`;
+  } else if (r.debugPort) {
+    $("helperStatus").textContent = "Helper ready; TIDAL is running with autoplay on.";
+  } else if (r.running) {
+    $("helperStatus").textContent = "Helper ready, but TIDAL was started without the launcher: quit it and use TIDAL (autoplay).";
+  } else {
+    $("helperStatus").textContent = "Helper ready; it will start TIDAL when you open a link.";
+  }
+}
+
+$("tidalAutoplay").addEventListener("change", async () => {
+  let on = $("tidalAutoplay").checked;
+  // The permission prompt must come straight from the click, before any other await.
+  if (on) on = await browser.permissions.request(NATIVE_PERM);
+  $("tidalAutoplay").checked = on;
+  await browser.storage.local.set({ tidalAutoplay: on });
+  if (on) checkHelper();
+  else $("helperStatus").textContent = "";
+});
 
 function save() {
   return browser.storage.local.set({
