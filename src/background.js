@@ -6,8 +6,30 @@ const DEFAULTS = {
   tidalClientSecret: "",
   countryCode: "US",
   tidalOpenIn: "app", // "app" = TIDAL desktop app, "web" = tidal.com
+  tidalAutoplay: false, // play in the TIDAL app through the native helper (native/install.sh)
   timeoutMs: 6000,
 };
+// Settings that change lookup results; changing one clears the cache.
+const LOOKUP_KEYS = ["order", "tidalClientId", "tidalClientSecret", "countryCode"];
+const NATIVE_HOST = "spotify_redirect_tidal";
+const NATIVE_PERM = { permissions: ["nativeMessaging"] };
+let canNative = false; // optional permission granted
+
+// handoff.html is web-accessible (a webRequest redirect can only land on such a page), so any
+// site could open it. Each redirect carries a one-time token naming what to play; the page
+// only acts on a token this script issued in the last minute.
+const handoffs = new Map(); // token -> { type, id, at }
+function issueHandoff(type, id) {
+  const token = crypto.randomUUID();
+  handoffs.set(token, { type, id, at: Date.now() });
+  for (const [t, h] of handoffs) if (Date.now() - h.at > 60_000) handoffs.delete(t);
+  return token;
+}
+function redeemHandoff(token) {
+  const h = handoffs.get(token);
+  handoffs.delete(token);
+  return h && Date.now() - h.at <= 60_000 ? h : null;
+}
 const HIT_TTL = 7 * 24 * 3600 * 1000;
 const MISS_TTL = 24 * 3600 * 1000;
 const BYPASS_PARAM = "nr"; // ?nr=1 on a Spotify link always opens Spotify
@@ -17,6 +39,7 @@ const memo = new Map(); // spotify key -> { target, service, at }
 
 async function loadConfig() {
   cfg = { ...DEFAULTS, ...(await browser.storage.local.get(Object.keys(DEFAULTS))) };
+  canNative = await browser.permissions.contains(NATIVE_PERM);
   updateAction();
 }
 
@@ -28,13 +51,16 @@ function updateAction() {
 
 browser.storage.onChanged.addListener((changes, area) => {
   if (area !== "local") return;
-  if (Object.keys(changes).some((k) => k in DEFAULTS)) {
-    // Settings changed (e.g. Tidal keys added): cached misses may now be hits.
+  if (Object.keys(changes).some((k) => LOOKUP_KEYS.includes(k))) {
+    // Lookup settings changed (e.g. Tidal keys added): cached misses may now be hits.
     memo.clear();
     browser.storage.local.remove("cache");
-    loadConfig();
   }
+  if (Object.keys(changes).some((k) => k in DEFAULTS)) loadConfig();
 });
+
+browser.permissions.onAdded.addListener(loadConfig);
+browser.permissions.onRemoved.addListener(loadConfig);
 
 browser.action.onClicked.addListener(async () => {
   await browser.storage.local.set({ enabled: !cfg.enabled });
@@ -130,6 +156,11 @@ browser.webRequest.onBeforeRequest.addListener(
       const r = await withTimeout(lookup(details.url), cfg.timeoutMs);
       if (r?.target) {
         const useApp = r.service === "tidal" && cfg.tidalOpenIn === "app";
+        if (useApp && cfg.tidalAutoplay && canNative) {
+          // The hand-off page asks the native helper to play it (see handoff.js).
+          const m = SR.tidalAppUrl(r.target).match(/^tidal:\/\/(track|album|artist)\/(\d+)$/);
+          if (m) return { redirectUrl: browser.runtime.getURL(`handoff.html#${issueHandoff(m[1], m[2])}`) };
+        }
         if (useApp) closeIfLeftEmpty(details.tabId, details.url);
         return { redirectUrl: useApp ? SR.tidalAppUrl(r.target) : r.target };
       }
@@ -142,8 +173,20 @@ browser.webRequest.onBeforeRequest.addListener(
   ["blocking"],
 );
 
-// Used by the options page's "Test" box.
-browser.runtime.onMessage.addListener((msg) => {
+function nativeMessage(payload) {
+  return browser.runtime.sendNativeMessage(NATIVE_HOST, payload)
+    .catch((e) => ({ ok: false, opened: false, played: false, reason: `helper not available (${e.message})` }));
+}
+
+// From the options page ("Test" box, helper check) and the hand-off page.
+browser.runtime.onMessage.addListener((msg, sender) => {
+  if (msg?.cmd === "autoplay") {
+    const h = redeemHandoff(msg.token);
+    if (!h) return Promise.resolve({ ok: false, opened: false, invalid: true, reason: "unknown or expired link" });
+    return nativeMessage({ type: h.type, id: h.id }).then((r) => ({ ...r, type: h.type, id: h.id }));
+  }
+  if (msg?.cmd === "pingHelper") return nativeMessage({ ping: true });
+  if (msg?.cmd === "closeTab" && sender.tab?.id >= 0) return browser.tabs.remove(sender.tab.id);
   if (msg?.cmd === "test") {
     return SR.resolve(msg.url, cfg, fetch.bind(globalThis))
       .then((r) => ({ ok: true, ...r }))
