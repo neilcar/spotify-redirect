@@ -35,6 +35,13 @@ hand once.
 For a quick try without signing: `about:debugging#/runtime/this-firefox` → "Load Temporary
 Add-on" → pick `src/manifest.json` (gone after a restart).
 
+## Settings sync
+From 1.3.2 the settings (including the Tidal keys) are kept in `storage.sync`, so Firefox or
+Zen Sync carries them to your other browsers signed in to the same account (add-on syncing
+must be on; Sync is end-to-end encrypted). The first start of 1.3.2 moves a browser's existing
+settings into sync storage, unless it already holds some from another browser. The lookup
+cache and the autoplay permission stay per browser.
+
 ## Autoplay in TIDAL (optional)
 Neither the TIDAL app nor tidal.com has a link that starts playback, so autoplay uses a small
 helper on the Mac (`native/tidal-play.mjs`) that Firefox runs through native messaging. It

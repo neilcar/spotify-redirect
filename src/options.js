@@ -1,15 +1,16 @@
 const $ = (id) => document.getElementById(id);
+// Settings are in storage.sync: Firefox/Zen Sync carries them to your other browsers.
 const FIELDS = ["tidalClientId", "tidalClientSecret", "countryCode"];
 const SELECTS = { tidalOpenIn: "app" };
 
 async function load() {
-  const s = await browser.storage.local.get(["enabled", "order", ...FIELDS]);
+  const s = await browser.storage.sync.get(["enabled", "order", ...FIELDS]);
   $("enabled").checked = s.enabled !== false;
   $("order").value = (s.order || ["bandcamp", "tidal"]).join(",");
-  const sel = await browser.storage.local.get(Object.keys(SELECTS));
+  const sel = await browser.storage.sync.get(Object.keys(SELECTS));
   for (const [k, d] of Object.entries(SELECTS)) $(k).value = sel[k] || d;
   for (const f of FIELDS) $(f).value = s[f] || (f === "countryCode" ? "US" : "");
-  const a = await browser.storage.local.get("tidalAutoplay");
+  const a = await browser.storage.sync.get("tidalAutoplay");
   $("tidalAutoplay").checked = !!a.tidalAutoplay && (await browser.permissions.contains(NATIVE_PERM));
   if ($("tidalAutoplay").checked) checkHelper();
 }
@@ -35,13 +36,13 @@ $("tidalAutoplay").addEventListener("change", async () => {
   // The permission prompt must come straight from the click, before any other await.
   if (on) on = await browser.permissions.request(NATIVE_PERM);
   $("tidalAutoplay").checked = on;
-  await browser.storage.local.set({ tidalAutoplay: on });
+  await browser.storage.sync.set({ tidalAutoplay: on });
   if (on) checkHelper();
   else $("helperStatus").textContent = "";
 });
 
 function save() {
-  return browser.storage.local.set({
+  return browser.storage.sync.set({
     enabled: $("enabled").checked,
     order: $("order").value.split(","),
     tidalClientId: $("tidalClientId").value.trim(),
