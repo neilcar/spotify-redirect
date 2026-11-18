@@ -1,7 +1,8 @@
 name: Release
 
 # Push a tag vX.Y.Z (matching src/manifest.json's version) to sign the extension as an
-# unlisted add-on on addons.mozilla.org and attach the signed .xpi to a GitHub Release.
+# unlisted add-on on addons.mozilla.org and attach the signed .xpi to a GitHub Release, with an
+# updates.json that installed copies poll (manifest update_url -> latest release) to auto-update.
 on:
   push:
     tags: ["v*"]
@@ -40,10 +41,21 @@ jobs:
           WEB_EXT_API_SECRET: ${{ secrets.AMO_JWT_SECRET }}
         # Waits up to 45 min for Mozilla's automated review, then downloads the signed .xpi.
         run: npx web-ext sign -s src -a dist --channel unlisted --approval-timeout 2700000
+      - name: Name the .xpi and write updates.json
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          shopt -s nullglob
+          xpis=(dist/*.xpi)
+          if [ "${#xpis[@]}" -ne 1 ]; then echo "expected one signed .xpi, found: ${xpis[*]}"; exit 1; fi
+          mv "${xpis[0]}" "dist/spotify-redirect-${TAG#v}.xpi"
+          npm run updates-json
+          ls -l dist/
       - name: GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
+        # --latest: update_url reads updates.json from the latest release.
         run: |
-          ls -l dist/
-          gh release create "$TAG" dist/*.xpi --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes
+          gh release create "$TAG" "dist/spotify-redirect-${TAG#v}.xpi" dist/updates.json \
+            --repo "$GITHUB_REPOSITORY" --title "$TAG" --generate-notes --latest

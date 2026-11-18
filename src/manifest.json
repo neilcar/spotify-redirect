@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Spotify → Bandcamp / Tidal",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Opens Spotify track, album and artist links on Bandcamp or Tidal when the music is there.",
   "browser_specific_settings": {
     "gecko": {
@@ -11,7 +11,8 @@
         "required": [
           "none"
         ]
-      }
+      },
+      "update_url": "https://github.com/neilcar/spotify-redirect/releases/latest/download/updates.json"
     }
   },
   "permissions": [
